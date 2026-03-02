@@ -3,6 +3,7 @@ using UnityEngine.InputSystem;
 using System.Collections;
 using TMPro;
 using Unity.VisualScripting;
+using UnityEngine.SceneManagement;
 
 public class PlayerController : MonoBehaviour
 {
@@ -14,8 +15,11 @@ public class PlayerController : MonoBehaviour
 
     public float velocidad = 10;
 
+    //para mostrar el menu cuando acaba el juego
+    public GameObject menuPrincipal;
+
     //Hará el conteo de objetos recibidos
-    private int  count;
+    private int count;
     private int _sizeEnemies;
     public GameObject explosionFX;
     public GameObject burstFX;
@@ -45,6 +49,24 @@ public class PlayerController : MonoBehaviour
         audioSource = GetComponent<AudioSource>();
     }
 
+    /*void OnEnable()
+    {
+        // reseteamos la posicion si es necesario (opcional)
+        // transform.position = new Vector3(0, 1, 0);
+
+        // aseguramos que el objeto este activo visualmente
+        this.gameObject.SetActive(true);
+
+        // reseteamos el contador y los textos
+        this.count = 0;
+
+
+        // rehabilitamos las fisicas por si acaso
+        if (rb == null) rb = GetComponent<Rigidbody>();
+        rb.linearVelocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
+    }*/
+
     void OnMove(InputValue movementValue)
     {
         // Debug.Log($"Movimiento detectado: {movementValue}");
@@ -63,14 +85,13 @@ public class PlayerController : MonoBehaviour
         Vector3 movement = new Vector3(movementX, 0.0f, movementY);
         Debug.Log($"Movimiento: {movement}");
         rb.AddForce(movement * velocidad);
-        
     }
 
     private void OnTriggerEnter(Collider other)
     {
         if (other.gameObject.CompareTag("PickUp"))
         {
-            Destroy(Instantiate(burstFX, other.transform.position, Quaternion.identity),3);
+            Destroy(Instantiate(burstFX, other.transform.position, Quaternion.identity), 3);
             other.gameObject.SetActive(false);
             this.count++;
             Debug.Log($"Objetos recogidos:{this.count}");
@@ -91,9 +112,10 @@ public class PlayerController : MonoBehaviour
         {
             this.winText.SetActive(true);
             Destroy(Instantiate(explosionFX, GameObject.FindGameObjectWithTag("Enemy").transform.position,
-                Quaternion.identity),2);
+                Quaternion.identity), 2);
             Destroy(GameObject.FindGameObjectWithTag("Enemy"));
             soundManagerSource.PlayOneShot(winSound);
+            //Invoke("MostrarMenu",2f);
         }
     }
 
@@ -103,9 +125,10 @@ public class PlayerController : MonoBehaviour
         {
             Instantiate(explosionFX, transform.position, Quaternion.identity);
             soundManagerSource.PlayOneShot(defeatSound);
-            Destroy(this.gameObject);
+            this.gameObject.SetActive(false);
             this.winText.SetActive(true);
             this.winText.GetComponent<TextMeshProUGUI>().text = "Has perdido! D:";
+            Invoke("MostrarMenu",2f);
         }
 
         Debug.Log($"Colision detectada con: {collision.gameObject.name}");
@@ -113,5 +136,30 @@ public class PlayerController : MonoBehaviour
         {
             audioSource.PlayOneShot(choqueSound);
         }
+    }
+
+    public void ActualizarVelocidad(string inputfield)
+    {
+        if (float.TryParse(inputfield, out float nuevaVelocidad) && nuevaVelocidad > 0)
+        {
+            this.velocidad = nuevaVelocidad;
+        }
+    }
+
+    public void MostrarMenu()
+    {
+        if (menuPrincipal != null) menuPrincipal.SetActive(true);
+        ReiniciarJuegoCompleto();
+        if (transform.parent != null) transform.parent.gameObject.SetActive(false);
+    }
+
+    public void ReiniciarJuegoCompleto()
+    {
+        // recarga la escena actual de 0
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+    public void ActualizarMusica(string inputfield)
+    {
     }
 }
